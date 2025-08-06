@@ -67,7 +67,7 @@ const CourseDetailsScreen = () => {
     if (!isAuthenticated) {
       Alert.alert(
         'Sign In Required',
-        'Please sign in to add classes to your cart',
+        'Please sign in to add classes to cart',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Sign In', onPress: () => navigation.navigate('Auth') }
@@ -85,14 +85,14 @@ const CourseDetailsScreen = () => {
     if (success) {
       Alert.alert(
         'Added to Cart',
-        'Class has been added to your cart',
+        'Class has been added to cart',
         [
           { text: 'Continue Shopping', style: 'cancel' },
           { text: 'View Cart', onPress: () => navigation.navigate('Main', { screen: 'Cart' }) }
         ]
       );
     } else {
-      Alert.alert('Already in Cart', 'This class is already in your cart');
+      Alert.alert('Already in Cart', 'This class is already in cart');
     }
   };
 

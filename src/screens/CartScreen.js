@@ -14,7 +14,7 @@ const CartScreen = () => {
   const handleRemoveItem = (instanceId) => {
     Alert.alert(
       'Remove Item',
-      'Are you sure you want to remove this class from your cart?',
+      'Are you sure you want to remove this class from cart?',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove', onPress: () => removeFromCart(instanceId) }
@@ -24,7 +24,7 @@ const CartScreen = () => {
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
-      Alert.alert('Empty Cart', 'Your cart is empty');
+      Alert.alert('Empty Cart', 'Cart is empty');
       return;
     }
 
@@ -52,7 +52,7 @@ const CartScreen = () => {
         clearCart();
         Alert.alert(
           'Success',
-          'Your bookings have been confirmed!',
+          'Bookings have been confirmed!',
           [{ text: 'View My Bookings', onPress: () => navigation.navigate('MyBookings') }]
         );
       }
@@ -141,7 +141,7 @@ const CartScreen = () => {
         </>
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Your cart is empty</Text>
+          <Text style={styles.emptyText}>Cart is empty</Text>
           <TouchableOpacity
             style={styles.browseButton}
             onPress={() => navigation.navigate('Home')}

@@ -75,7 +75,7 @@ const MyBookingsScreen = () => {
   const handleCancelBooking = async (bookingId) => {
     Alert.alert(
       'Cancel Booking',
-      'Are you sure you want to cancel this booking?',
+      'Are you sure you want to cancel this booking?'
       [
         { text: 'No', style: 'cancel' },
         {
@@ -92,7 +92,7 @@ const MyBookingsScreen = () => {
                   prevBookings.filter(booking => booking.id !== bookingId)
                 );
                 
-                Alert.alert('Success', 'Your booking has been cancelled');
+                Alert.alert('Success', 'Booking has been cancelled');
               }
             } catch (error) {
               Alert.alert('Error', error.message);
@@ -185,7 +185,7 @@ const MyBookingsScreen = () => {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>You don't have any bookings yet</Text>
+          <Text style={styles.emptyText}>No bookings yet</Text>
         </View>
       )}
     </View>

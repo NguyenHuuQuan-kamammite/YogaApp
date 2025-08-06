@@ -74,7 +74,7 @@ const ProfileScreen = () => {
   const handleLogout = async () => {
     Alert.alert(
       'Logout',
-      'Are you sure you want to logout?',
+      'Are you sure you want to log out?',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -159,9 +159,9 @@ const ProfileScreen = () => {
       
       // Check if it's a local file URI (from camera/gallery)
       if (profilePictureUrl && profilePictureUrl.startsWith('file://')) {
-        // In a real app, you would upload this to a storage service like Firebase Storage
+        // In a real app, images would be uploaded to a storage service like Firebase Storage
         // For now, we'll just show a warning and save the local URI
-        // In a production app, you would implement actual image upload here
+        // In a production app, actual image upload would be implemented here
         console.warn('Local image URI detected. In a production app, this would be uploaded to storage.');
       }
       

@@ -1,5 +1,5 @@
 // Firebase configuration
-// Replace with your own Firebase project configuration
+// Firebase project configuration
 
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';

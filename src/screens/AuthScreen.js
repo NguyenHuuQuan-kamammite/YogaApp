@@ -99,7 +99,7 @@ const AuthScreen = () => {
         <View style={styles.formContainer}>
           <Text style={styles.title}>{isLogin ? 'Welcome Back' : 'Create Account'}</Text>
           <Text style={styles.subtitle}>
-            {isLogin ? 'Sign in to access your account' : 'Register to start booking yoga classes'}
+            {isLogin ? 'Sign in to access account' : 'Register to start booking yoga classes'}
           </Text>
 
           <View style={styles.inputContainer}>

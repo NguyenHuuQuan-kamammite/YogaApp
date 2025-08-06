@@ -196,7 +196,7 @@ export const getUserBookings = async (userId) => {
   try {
     const bookingsCollection = collection(db, 'bookings');
     // NOTE: This query requires a composite index in Firestore
-    // If you get a 'query requires an index' error, click the link in the error message
+    // If a 'query requires an index' error occurs, click the link in the error message
     // or create a composite index manually in the Firebase Console:
     // Collection: bookings, Fields: customerId (==), status (!=), bookingDate (desc)
     const q = query(
