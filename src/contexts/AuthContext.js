@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { onAuthStateChange, getCurrentUser } from '../services/firebaseService';
+import { onAuthStateChange, getCurrentUser, logoutUser } from '../services/firebaseService';
 
 // Create the authentication context
 const AuthContext = createContext();
@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!currentUser,
     userId: currentUser ? currentUser.uid : null,
     userEmail: currentUser ? currentUser.email : null,
+    logout: logoutUser,
   };
 
   return (

@@ -10,6 +10,7 @@ import HomeScreen from '../screens/HomeScreen';
 import CourseDetailsScreen from '../screens/CourseDetailsScreen';
 import CartScreen from '../screens/CartScreen';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 // Contexts
 import { useAuth } from '../contexts/AuthContext';
@@ -31,6 +32,8 @@ const MainTabNavigator = () => {
             iconName = focused ? 'cart' : 'cart-outline';
           } else if (route.name === 'MyBookings') {
             iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -54,6 +57,11 @@ const MainTabNavigator = () => {
         name="MyBookings" 
         component={MyBookingsScreen} 
         options={{ title: 'My Bookings' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
   );

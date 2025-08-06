@@ -11,6 +11,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
+  setDoc,
   query, 
   where, 
   orderBy 
@@ -80,7 +81,7 @@ export const getCourses = async () => {
       id: doc.id,
       ...doc.data(),
       // Add this to include class type name
-      classtype: doc.data().classtype || 'General' // Default value
+      classtype: doc.data().classType || 'General' // Default value
     }));
     return { courses: coursesList, error: null };
   } catch (error) {
@@ -109,15 +110,31 @@ export const getCourseById = async (courseId) => {
 // Course Instances
 export const getCourseInstances = async (courseId) => {
   try {
+    console.log('getCourseInstances called with courseId:', courseId, 'type:', typeof courseId);
+    
     const instancesCollection = collection(db, 'instances');
-    const q = query(instancesCollection, where("courseId", "==", courseId));
+    
+    // Since course IDs are strings but instances have number courseIds,
+    // we need to query with the number version
+    const courseIdAsNumber = Number(courseId);
+    const q = query(instancesCollection, where("courseId", "==", courseIdAsNumber));
+    
     const instancesSnapshot = await getDocs(q);
-    const instancesList = instancesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    console.log(`Query with courseId ${courseIdAsNumber} returned ${instancesSnapshot.docs.length} instances`);
+    
+    const instancesList = instancesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log('Instance data:', { id: doc.id, ...data });
+      return {
+        id: doc.id,
+        ...data
+      };
+    });
+    
+    console.log('Final instances found:', instancesList.length);
     return { instances: instancesList, error: null };
   } catch (error) {
+    console.error('getCourseInstances error:', error);
     return { instances: [], error: error.message };
   }
 };
@@ -141,6 +158,25 @@ export const getTeacherById = async (teacherId) => {
   }
 };
 
+// Course Instances
+export const getInstanceById = async (instanceId) => {
+  try {
+    const instanceRef = doc(db, 'instances', instanceId);
+    const instanceSnap = await getDoc(instanceRef);
+    
+    if (instanceSnap.exists()) {
+      return { 
+        instance: { id: instanceSnap.id, ...instanceSnap.data() }, 
+        error: null 
+      };
+    } else {
+      return { instance: null, error: 'Instance not found' };
+    }
+  } catch (error) {
+    return { instance: null, error: error.message };
+  }
+};
+
 // Bookings
 export const createBooking = async (bookingData) => {
   try {
@@ -159,9 +195,14 @@ export const createBooking = async (bookingData) => {
 export const getUserBookings = async (userId) => {
   try {
     const bookingsCollection = collection(db, 'bookings');
+    // NOTE: This query requires a composite index in Firestore
+    // If you get a 'query requires an index' error, click the link in the error message
+    // or create a composite index manually in the Firebase Console:
+    // Collection: bookings, Fields: customerId (==), status (!=), bookingDate (desc)
     const q = query(
       bookingsCollection, 
       where("customerId", "==", userId),
+      where("status", "!=", "cancelled"),
       orderBy("bookingDate", "desc")
     );
     const bookingsSnapshot = await getDocs(q);
@@ -172,7 +213,26 @@ export const getUserBookings = async (userId) => {
     }));
     return { bookings: bookingsList, error: null };
   } catch (error) {
-    return { bookings: [], error: error.message };
+    // If the "status != cancelled" query fails due to missing index, fall back to client-side filtering
+    try {
+      const bookingsCollection = collection(db, 'bookings');
+      const q = query(
+        bookingsCollection, 
+        where("customerId", "==", userId),
+        orderBy("bookingDate", "desc")
+      );
+      const bookingsSnapshot = await getDocs(q);
+      const bookingsList = bookingsSnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          bookingDate: doc.data().bookingDate.toDate() // Convert Firestore timestamp to JS Date
+        }))
+        .filter(booking => booking.status !== 'cancelled'); // Filter out cancelled bookings
+      return { bookings: bookingsList, error: null };
+    } catch (fallbackError) {
+      return { bookings: [], error: fallbackError.message };
+    }
   }
 };
 
@@ -188,11 +248,45 @@ export const cancelBooking = async (bookingId) => {
   }
 };
 
+// User Profile functions
+export const getUserProfile = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      return { profile: { id: userSnap.id, ...userSnap.data() }, error: null };
+    } else {
+      // If user profile doesn't exist, return default profile
+      return { profile: { id: userId, name: '', email: '', bio: '', yogaPreferences: [], profilePicture: '' }, error: null };
+    }
+  } catch (error) {
+    return { profile: null, error: error.message };
+  }
+};
+
+export const updateUserProfile = async (userId, profileData) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, profileData);
+    return { success: true, error: null };
+  } catch (error) {
+    // If document doesn't exist, create it
+    try {
+      const userRef = doc(db, 'users', userId);
+      await setDoc(userRef, profileData);
+      return { success: true, error: null };
+    } catch (createError) {
+      return { success: false, error: createError.message };
+    }
+  }
+};
+
 // Search and filtering
 export const searchCoursesByType = async (classType) => {
   try {
     const coursesCollection = collection(db, 'courses');
-    const q = query(coursesCollection, where("classtype", "==", classType));
+    const q = query(coursesCollection, where("classType", "==", classType));
     const coursesSnapshot = await getDocs(q);
     const coursesList = coursesSnapshot.docs.map(doc => ({
       id: doc.id,
@@ -214,8 +308,8 @@ export const getClassTypes = async () => {
     const classTypes = new Set();
     coursesSnapshot.docs.forEach(doc => {
       const data = doc.data();
-      if (data.classtype) {
-        classTypes.add(data.classtype);
+      if (data.classType) {
+        classTypes.add(data.classType);
       }
     });
     

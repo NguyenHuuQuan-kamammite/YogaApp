@@ -28,15 +28,28 @@ const CourseDetailsScreen = () => {
       if (result.error) {
         Alert.alert('Error', result.error);
       } else {
-        setInstances(result.instances);
+        // Filter out past dates - only show future or today's classes
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+        
+        const futureInstances = result.instances.filter(instance => {
+          const instanceDate = new Date(instance.date);
+          return instanceDate >= today;
+        });
+        
+        setInstances(futureInstances);
         
         // Fetch teacher details for each instance
-        const teacherIds = [...new Set(result.instances.map(instance => instance.teacherId))];
+        // Convert teacherId to string since teachers collection uses string IDs
+        const teacherIds = [...new Set(futureInstances.map(instance => instance.teacherId))];
         const teacherData = {};
         
         for (const teacherId of teacherIds) {
-          const teacherResult = await getTeacherById(teacherId);
+          // Convert number teacherId to string for proper lookup
+          const teacherIdAsString = String(teacherId);
+          const teacherResult = await getTeacherById(teacherIdAsString);
           if (!teacherResult.error) {
+            // Store using the original numeric ID since that's what's in the instance
             teacherData[teacherId] = teacherResult.teacher;
           }
         }
@@ -75,7 +88,7 @@ const CourseDetailsScreen = () => {
         'Class has been added to your cart',
         [
           { text: 'Continue Shopping', style: 'cancel' },
-          { text: 'View Cart', onPress: () => navigation.navigate('Cart') }
+          { text: 'View Cart', onPress: () => navigation.navigate('Main', { screen: 'Cart' }) }
         ]
       );
     } else {
@@ -101,13 +114,6 @@ const CourseDetailsScreen = () => {
       <View style={styles.header}>
         <Text style={styles.title}>{course.classtype} Yoga</Text>
         <Text style={styles.price}>${course.price}</Text>
-      </View>
-
-      <View style={styles.classTypeContainer}>
-        <Text style={styles.classTypeLabel}>Class Type:</Text>
-        <View style={styles.classTypeTag}>
-          <Text style={styles.classTypeText}>{course.classtype}</Text>
-        </View>
       </View>
 
       <View style={styles.classTypeContainer}>
@@ -143,6 +149,7 @@ const CourseDetailsScreen = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Available Dates</Text>
+
         {instances.length > 0 ? (
           instances.map((instance) => (
             <TouchableOpacity
@@ -156,13 +163,20 @@ const CourseDetailsScreen = () => {
                   <Text style={styles.selectedText}>Selected</Text>
                 )}
               </View>
-              {teachers[instance.teacherId] && (
+              {teachers[instance.teacherId] ? (
                 <View style={styles.teacherInfo}>
-                  <Text style={styles.teacherName}>Teacher: {teachers[instance.teacherId].name}</Text>
+                  <Text style={styles.teacherName}>Teacher: {teachers[instance.teacherId]?.name || 'Unknown'}</Text>
+                </View>
+              ) : (
+                <View style={styles.teacherInfo}>
+                  <Text style={styles.teacherName}>Teacher: Not available</Text>
                 </View>
               )}
               {instance.comments && (
-                <Text style={styles.instanceComments}>{instance.comments}</Text>
+                <View style={styles.commentsContainer}>
+                  <Text style={styles.commentsLabel}>Notes:</Text>
+                  <Text style={styles.instanceComments}>{instance.comments}</Text>
+                </View>
               )}
             </TouchableOpacity>
           ))
@@ -332,11 +346,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  commentsContainer: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+  },
+  commentsLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    marginBottom: 2,
+  },
   instanceComments: {
     fontSize: 14,
-    color: '#888',
-    marginTop: 5,
-    fontStyle: 'italic',
+    color: '#555',
+    lineHeight: 18,
   },
   noInstances: {
     fontSize: 16,

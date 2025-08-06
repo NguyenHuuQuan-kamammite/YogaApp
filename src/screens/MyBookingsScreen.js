@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getUserBookings, cancelBooking, getCourseById } from '../services/firebaseService';
+import { getUserBookings, cancelBooking, getCourseById, getTeacherById, getInstanceById } from '../services/firebaseService';
 import { useAuth } from '../contexts/AuthContext';
 
 const MyBookingsScreen = () => {
@@ -17,6 +17,8 @@ const MyBookingsScreen = () => {
     }, [userId])
   );
 
+
+
   const fetchBookings = async () => {
     if (!userId) return;
 
@@ -26,17 +28,41 @@ const MyBookingsScreen = () => {
       if (result.error) {
         Alert.alert('Error', result.error);
       } else {
-        // Fetch course details for each booking
-        const bookingsWithCourses = await Promise.all(
+        // Fetch course, instance, and teacher details for each booking
+        const bookingsWithDetails = await Promise.all(
           result.bookings.map(async (booking) => {
+            // Fetch course details
             const courseResult = await getCourseById(booking.courseId);
+            
+            // Fetch instance details
+            let instance = null;
+            let teacher = null;
+            if (booking.instanceId) {
+              const instanceResult = await getInstanceById(booking.instanceId);
+              if (!instanceResult.error) {
+                instance = instanceResult.instance;
+                
+                // Fetch teacher details if teacherId exists in instance
+                if (instance.teacherId) {
+                  // Convert number teacherId to string for proper lookup
+                  const teacherIdAsString = String(instance.teacherId);
+                  const teacherResult = await getTeacherById(teacherIdAsString);
+                  if (!teacherResult.error) {
+                    teacher = teacherResult.teacher;
+                  }
+                }
+              }
+            }
+            
             return {
               ...booking,
-              course: courseResult.course || null
+              course: courseResult.course || null,
+              instance: instance,
+              teacher: teacher
             };
           })
         );
-        setBookings(bookingsWithCourses);
+        setBookings(bookingsWithDetails);
       }
     } catch (error) {
       Alert.alert('Error', error.message);
@@ -61,12 +87,11 @@ const MyBookingsScreen = () => {
               if (result.error) {
                 Alert.alert('Error', result.error);
               } else {
-                // Update the local state to reflect the cancellation
-                setBookings(bookings.map(booking => 
-                  booking.id === bookingId 
-                    ? { ...booking, status: 'cancelled' } 
-                    : booking
-                ));
+                // Immediately remove the cancelled booking from the list
+                setBookings(prevBookings => 
+                  prevBookings.filter(booking => booking.id !== bookingId)
+                );
+                
                 Alert.alert('Success', 'Your booking has been cancelled');
               }
             } catch (error) {
@@ -90,7 +115,7 @@ const MyBookingsScreen = () => {
     <View style={[styles.bookingCard, item.status === 'cancelled' && styles.cancelledBooking]}>
       <View style={styles.bookingHeader}>
         <Text style={styles.bookingTitle}>
-          {item.course ? `${item.course.classtype} Yoga` : 'Unknown Class'}
+          {item.course ? `${item.course.classType} Yoga` : 'Unknown Class'}
         </Text>
         <View style={[styles.statusBadge, item.status === 'cancelled' && styles.cancelledBadge]}>
           <Text style={styles.statusText}>{item.status}</Text>
@@ -101,6 +126,20 @@ const MyBookingsScreen = () => {
         <View style={styles.courseDetails}>
           <Text style={styles.courseInfo}>{item.course.dayOfWeek} at {item.course.time}</Text>
           <Text style={styles.courseInfo}>{item.course.durationMinutes} minutes</Text>
+        </View>
+      )}
+
+      {item.teacher && (
+        <View style={styles.teacherInfo}>
+          <Text style={styles.teacherLabel}>Teacher:</Text>
+          <Text style={styles.teacherName}>{item.teacher.name}</Text>
+        </View>
+      )}
+
+      {item.instance?.comments && (
+        <View style={styles.commentsContainer}>
+          <Text style={styles.commentsLabel}>Class Notes:</Text>
+          <Text style={styles.commentsText}>{item.instance.comments}</Text>
         </View>
       )}
 
@@ -159,16 +198,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 15,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#333',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bookingsList: {
     paddingBottom: 20,
@@ -244,6 +283,39 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  teacherInfo: {
+    flexDirection: 'row',
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  teacherLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginRight: 5,
+  },
+  teacherName: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  commentsContainer: {
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: '#f0f9f0',
+    borderRadius: 5,
+  },
+  commentsLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 3,
+  },
+  commentsText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
   },
   emptyContainer: {
     flex: 1,
