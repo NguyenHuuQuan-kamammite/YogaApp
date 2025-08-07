@@ -36,6 +36,8 @@
 5. User credentials for testing:
    - Register a new account or use existing test accounts
    - All data will be shared with the student who provided you the app
-
-**Note**: The Firebase configuration in `src/firebase/config.js` contains the project credentials that allow access to the database. This is normal for Firebase web applications.
+For people dont want to register
+Email: user@gmail.com
+Password:user@gmail.com
+**Note**: The Firebase configuration in `src/firebase/config.js` contains the project credentials that allow access to the database.
 
